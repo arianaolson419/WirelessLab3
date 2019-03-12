@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 
 # Define constants used in this implementation.
 NUM_SAMPLES_PER_PACKET = 64
-NUM_PACKETS = 10
+NUM_PACKETS = 1000
+NUM_HEADER_PACKETS = 10
 NUM_SAMPLES_CYCLIC_PREFIX = 16
 
 def create_signal_freq_domain(num_samples, num_packets, seed):
@@ -42,10 +43,11 @@ def create_signal_time_domain(num_samples_data, num_samples_prefix, signal_freq)
         signal_time: A time domain signal of data packets with cyclic prefixes.
     """
     num_packets = signal_freq.shape[-1] // num_samples_data
-    num_samples_per_packet = num_samples_data + num_samples_prefix
-    num_time_samples = num_samples_per_packet  * num_packets
+    num_time_samples_per_packet = num_samples_data + num_samples_prefix
+    num_time_samples = num_time_samples_per_packet  * num_packets
     signal_time = np.zeros(num_time_samples, dtype=np.complex64)
 
+    # Create data packets with cyclic prefixes.
     for i in range(num_packets):
         packet_start = i * num_samples_data
         packet_end = packet_start + num_samples_data
@@ -53,17 +55,38 @@ def create_signal_time_domain(num_samples_data, num_samples_prefix, signal_freq)
         time_data_packet = np.fft.ifft(signal_freq[packet_start:packet_end])
         prefix = time_data_packet[-num_samples_prefix:]
 
-        # Add prefix.
-        prefix_start = i * num_samples_per_packet
+        prefix_start = i * num_time_samples_per_packet
         prefix_end = prefix_start + num_samples_prefix
 
         data_start = prefix_end
         data_end = prefix_end + num_samples_data
         
+        # Add prefix
         signal_time[prefix_start:prefix_end] = prefix
+
+        # Add data after prefix
         signal_time[data_start:data_end] = time_data_packet
 
     return signal_time
+
+def detect_start(signal_time_rx, header, signal_length):
+    """Find the start of the time domain signal using crosss correlation.
+
+    Args:
+        signal_time_rx (1D complex ndarray): A received time domain signal
+            that conatains a known header as the first portion of the signal.
+        header (1D complex ndarray): A known signal that is included at the
+            beginning of the transmitted signal.
+        signal_length (int): The length of the signal that whas transmitted.
+
+    Returns:
+        signal_time_start (1D complex ndarray): A version of signal_time_rx
+            that starts at the first data sample.
+    """
+    cross_corr = np.correlate(signal_time_rx, header)
+    lag = np.argmax(cross_corr)
+
+    return signal_time_rx[lag:lag+signal_length]
 
 def estimate_channel(tx_known_signals_frequency, rx_known_signals_frequncy):
     """Estimate the frequency domain channel coefficient from a set of transmitted and received known signals.
@@ -114,7 +137,7 @@ def convert_time_to_frequency(num_samples_data, num_samples_prefix, signal_time)
         data_start_freq = num_samples_data * i
         data_end_freq = data_start_freq + num_samples_data
 
-        signal_freq[data_start_freq:data_end_freq] = signal_time[data_start_time:data_end_time]
+        signal_freq[data_start_freq:data_end_freq] = np.fft.fft(signal_time[data_start_time:data_end_time])
 
     return signal_freq
 
