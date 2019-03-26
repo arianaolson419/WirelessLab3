@@ -45,6 +45,7 @@ def create_signal_time_domain(num_samples_data, num_samples_prefix, signal_freq)
     num_packets = signal_freq.shape[-1] // num_samples_data
     num_time_samples_per_packet = num_samples_data + num_samples_prefix
     num_time_samples = num_time_samples_per_packet  * num_packets
+
     signal_time = np.zeros(num_time_samples, dtype=np.complex64)
 
     # Create data packets with cyclic prefixes.
@@ -85,7 +86,16 @@ def detect_start(signal_time_rx, header, signal_length):
     """
     cross_corr = np.correlate(signal_time_rx, header)
     lag = np.argmax(cross_corr)
+    plt.plot(cross_corr)
+    plt.show()
+    plt.title("cross corr")
 
+    return signal_time_rx[lag:lag+signal_length]
+
+def detect_start_lts(signal_time_rx, lts, signal_length):
+    cross_corr = np.correlate(signal_time_rx, lts)
+    # TODO: This is hard coded, find a more automatic way to do this, maybe with rms.
+    lag = np.argmax(np.abs(cross_corr) > 20)
     return signal_time_rx[lag:lag+signal_length]
 
 def estimate_channel(tx_known_signals_frequency, rx_known_signals_frequncy):
@@ -186,3 +196,71 @@ def calculate_error(bits_tx, bits_est):
     percent_error = 100 * num_wrong / bits_tx.shape[-1]
 
     return percent_error
+
+def create_long_training_sequence(num_samples, seed_real, seed_imag):
+    """Create one block of the long training sequence used by the Schmidl Cox
+    Algorithm.
+
+    Args:
+
+        num_samples: The number of samples in a block.
+        seed_real: The seed used for the random number generator to generate
+            the real portion of the signal.
+        seed_imag: The seed used for the random number generator to generate
+            the imag portion of the signal.
+
+    Returns
+
+        lts (1D complex ndarray): A block of random complex values taking on
+            values of +-1 +-j of length 3 * num_samples. This contains 3 repeating
+            blocks of size num_samples.
+    """
+    np.random.seed(seed_real)
+    reals = np.sign(np.random.randn(num_samples))
+
+    np.random.seed(seed_imag)
+    imags = np.sign(np.random.randn(num_samples))
+    
+    lts_block = reals + 1j * imags
+    lts = np.zeros(num_samples * 3, dtype=np.complex64)
+    lts[:num_samples] = lts_block
+    lts[num_samples:2 * num_samples] = lts_block
+    lts[2 * num_samples:3 * num_samples] = lts_block
+
+    return lts
+
+def estimate_f_delta(lts, num_samples):
+    """Estimate the frequency offset of a received OFDM signal using the LTS.
+
+    Args:
+        lts (1D complex ndarray): A block of random complex values taking on
+            values of +-1 +-j of length 3 * num_samples that has been sent through a nonflat channel. This contains 3 repeating
+            blocks of size num_samples.
+        num_samples (int): The number of samples in each LTS block.
+
+    Returns:
+        f_delta_est (float): The average estimated frequency offset, in radians.
+    """
+    sum_f_delta_ests = 0
+    for i in range(num_samples):
+        complex_exp = lts[2 * num_samples + i] / lts[num_samples + i]
+        sum_f_delta_ests += np.angle(complex_exp)
+
+    return sum_f_delta_ests / (num_samples ** 2)
+
+def correct_freq_offset(signal_time, f_delta):
+    """Correct for the frequency offset in a time-domain signal.
+
+    Args:
+        signal_time (1D complex ndarray): A time domain signal that starts with
+            the LTS used to estimate the frequency offset.
+        f_delta (float): The frequency offset to correct for, in radians.
+
+    Returns:
+        signal_time_corrected (1D complex ndarray): The corrected time domain
+            signal. Has the same shape as signal_time.
+    """
+    exponentials = np.exp(np.arange(signal_time.shape[-1]) * 1j * f_delta)
+    signal_time_corrected = signal_time / exponentials
+
+    return signal_time_corrected
