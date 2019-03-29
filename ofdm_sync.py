@@ -1,4 +1,5 @@
 """This script contains code to implement a simulated OFDM system, as described
+from utils import ofdm_util as ofdm
 in Lab 3 part a. The signals in this script are timing synchronized.
 
 Author: Ariana Olson
