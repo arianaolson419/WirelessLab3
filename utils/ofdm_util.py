@@ -92,7 +92,7 @@ def detect_start(signal_time_rx, header, signal_length):
 def detect_start_lts(signal_time_rx, lts, signal_length):
     cross_corr = np.correlate(signal_time_rx, lts)
     # TODO: This is hard coded, find a more automatic way to do this, maybe with rms.
-    lag = np.argmax(np.abs(cross_corr))
+    lag = np.argmax(np.abs(cross_corr)) - 1
     return signal_time_rx[lag:lag+signal_length]
 
 def estimate_channel(tx_known_signal_frequency, rx_known_signal_frequncy):
