@@ -54,6 +54,7 @@ plt.show()
 
 # Find the start of the data using the LTS.
 signal_time_rx = ofdm.detect_start_lts(signal_time_rx, lts, signal_time_tx.shape[-1])
+print('short')
 print(signal_time_rx.shape, signal_time_tx.shape)
 
 # Estmate f_delta using the LTS.
@@ -62,6 +63,7 @@ f_delta_est = ofdm.estimate_f_delta(lts_rx, ofdm.NUM_SAMPLES_PER_PACKET)
 
 # Correct for f_delta.
 signal_time_rx = ofdm.correct_freq_offset(signal_time_rx, f_delta_est)
+print(signal_time_rx.shape, 'after freq offset correction')
 
 # Estimate the channel using the known channel estimation sequence.
 channel_est_start = lts.shape[-1]
@@ -73,21 +75,17 @@ known_signal_freq_rx = ofdm.convert_time_to_frequency(ofdm.NUM_SAMPLES_PER_PACKE
 H = ofdm.estimate_channel([known_signal_freq_tx], [known_signal_freq_rx])
 
 # Convert from time to frequency domain.
-signal_freq_rx = ofdm.convert_time_to_frequency(ofdm.NUM_SAMPLES_PER_PACKET, ofdm.NUM_SAMPLES_CYCLIC_PREFIX, signal_time_rx)
+data_time_rx = signal_time_rx[channel_est_end:]
+data_freq_rx = ofdm.convert_time_to_frequency(ofdm.NUM_SAMPLES_PER_PACKET, ofdm.NUM_SAMPLES_CYCLIC_PREFIX, data_time_rx)
 
 # Equalize the signal
-signal_freq_eq = ofdm.equalize_frequency(H, signal_freq_rx)
+data_freq_rx = ofdm.equalize_frequency(H, data_freq_rx)
 
-# Find the data portion of the signal.
-data_freq_rx_start = lts.shape[-1] + known_signal_freq_tx.shape[-1]
-data_freq_rx = signal_freq_rx[data_freq_rx_start - 64:]
-print(data_freq_rx.shape)
-
-# Decode the signal in the frequency domain.
+## Decode the signal in the frequency domain.
 bits = ofdm.decode_signal_freq(data_freq_rx)
 print(bits.shape, data_freq_tx.shape)
 
 # Calculate the percent error rate.
-#percent_error = ofdm.calculate_error(data_freq_tx, bits)
-#
-#print("The bit error rate is: {}%".format(percent_error))
+percent_error = ofdm.calculate_error(data_freq_tx, bits)
+
+print("The bit error rate is: {}%".format(percent_error))
