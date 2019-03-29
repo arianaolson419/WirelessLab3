@@ -33,7 +33,7 @@ known_signal_time_rx = ofdm.detect_start(known_signal_time_rx, known_signal_time
 known_signal_freq_rx = ofdm.convert_time_to_frequency(ofdm.NUM_SAMPLES_PER_PACKET, ofdm.NUM_SAMPLES_CYCLIC_PREFIX, known_signal_time_rx)
 
 # Estimate the channel using the known signals.
-H = ofdm.estimate_channel([known_signal_freq_tx], [known_signal_freq_rx])
+H = ofdm.estimate_channel(known_signal_freq_tx, known_signal_freq_rx)
 
 # Create a signal to transmit.
 seed = 10

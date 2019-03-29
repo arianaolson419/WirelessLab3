@@ -4,6 +4,7 @@ Author: Ariana Olson
 """
 from __future__ import print_function, division
 import numpy as np
+import matplotlib.pyplot as plt
 
 # Define constants used in this implementation.
 NUM_SAMPLES_PER_PACKET = 64
@@ -92,28 +93,24 @@ def detect_start_lts(signal_time_rx, lts, signal_length):
     cross_corr = np.correlate(signal_time_rx, lts)
     # TODO: This is hard coded, find a more automatic way to do this, maybe with rms.
     lag = np.argmax(np.abs(cross_corr))
-    print(lag, 'lag')
     return signal_time_rx[lag:lag+signal_length]
 
-def estimate_channel(tx_known_signals_frequency, rx_known_signals_frequncy):
+def estimate_channel(tx_known_signal_frequency, rx_known_signal_frequncy):
     """Estimate the frequency domain channel coefficient from a set of transmitted and received known signals.
 
     Args:
-        tx_known_signals_frequency (list of 1D ndarrays): Frequency domain known signals that were transmitted through the channel.
-        rx_known_signals_frequency (list of 1D ndarrays): The frequency domain received signals corresponding to the signals in tx_known_signals_frequency.
+        tx_known_signals_frequency (1D ndarray): Frequency domain known signal transmitted through the channel.
+        rx_known_signals_frequency (1D ndarray): Frequency domain received signal corresponding to tx_known_signal_frequency.
 
     Returns:
         H (complex float): the estimated channel in the frequency domain.
     """
-    assert len(tx_known_signals_frequency) == len(rx_known_signals_frequncy)
-    assert len(tx_known_signals_frequency) > 0
+    assert tx_known_signal_frequency.shape == rx_known_signal_frequncy.shape
 
-    Hs = []
-    for tx, rx in zip(tx_known_signals_frequency, rx_known_signals_frequncy):
-        Hs.append(np.mean(rx / tx))
+    H = rx_known_signal_frequncy / tx_known_signal_frequency
+    H = H.reshape(rx_known_signal_frequncy.shape[-1] // NUM_SAMPLES_PER_PACKET, NUM_SAMPLES_PER_PACKET)
 
-    H = np.mean(np.array(Hs))
-
+    H = np.mean(H, axis=0)
     return(H)
 
 def convert_time_to_frequency(num_samples_data, num_samples_prefix, signal_time):
@@ -159,8 +156,10 @@ def equalize_frequency(channel_estimation, signal_freq):
     Returns:
         signal_freq_eq: An equalized frequency domain signal.
     """
-    signal_freq_eq = signal_freq / channel_estimation
-    return signal_freq_eq
+    assert signal_freq.shape[-1] % channel_estimation.shape[-1] == 0
+    for i in range(0, signal_freq.shape[-1], NUM_SAMPLES_PER_PACKET):
+        signal_freq[i:i+NUM_SAMPLES_PER_PACKET] = signal_freq[i:i+NUM_SAMPLES_PER_PACKET] / channel_estimation
+    return signal_freq
 
 def decode_signal_freq(signal_freq):
     """Decode a frequency domain signal into a series of bits.
