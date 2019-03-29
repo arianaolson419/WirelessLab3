@@ -4,7 +4,6 @@ Author: Ariana Olson
 """
 from __future__ import print_function, division
 import numpy as np
-import matplotlib.pyplot as plt
 
 # Define constants used in this implementation.
 NUM_SAMPLES_PER_PACKET = 64
@@ -86,16 +85,14 @@ def detect_start(signal_time_rx, header, signal_length):
     """
     cross_corr = np.correlate(signal_time_rx, header)
     lag = np.argmax(cross_corr)
-    plt.plot(cross_corr)
-    plt.show()
-    plt.title("cross corr")
 
     return signal_time_rx[lag:lag+signal_length]
 
 def detect_start_lts(signal_time_rx, lts, signal_length):
     cross_corr = np.correlate(signal_time_rx, lts)
     # TODO: This is hard coded, find a more automatic way to do this, maybe with rms.
-    lag = np.argmax(np.abs(cross_corr) > 20)
+    lag = np.argmax(np.abs(cross_corr))
+    print(lag, 'lag')
     return signal_time_rx[lag:lag+signal_length]
 
 def estimate_channel(tx_known_signals_frequency, rx_known_signals_frequncy):
