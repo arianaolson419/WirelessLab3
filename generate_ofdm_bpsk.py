@@ -56,4 +56,6 @@ tmp.tofile('tx_bpsk.dat')
 # Save the comonents of the transmitted signal for analysis and correction at the receiver.
 dest = 'tx_arrays.npz'
 
-np.savez(dest, lts=lts, header=known_signal_time_tx, data=data_time_tx)
+np.savez(dest, lts=lts, header_time=known_signal_time_tx,
+        data_time=data_time_tx, header_freq=known_signal_freq_tx,
+        data_freq=data_freq_tx)
