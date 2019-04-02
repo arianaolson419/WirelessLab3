@@ -52,3 +52,8 @@ plt.show()
 
 # Save to a binary file.
 tmp.tofile('tx_bpsk.dat')
+
+# Save the comonents of the transmitted signal for analysis and correction at the receiver.
+dest = 'tx_arrays.npz'
+
+np.savez(dest, lts=lts, header=known_signal_time_tx, data=data_time_tx)

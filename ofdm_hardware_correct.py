@@ -9,6 +9,10 @@ import numpy as np
 # TODO: read in received data from file.
 # TODO: make interleaved signal into a complex signal
 # TODO: load in saved lts, header, data. 
+tx_arrays = np.load('tx_arrays.npz')
+lts = tx_arrays['lts']
+header_time = tx_arrays['header']
+data_time = tx_arrays['data']
 
 # Find the start of the data using the LTS.
 signal_time_rx = ofdm.detect_start_lts(signal_time_rx, lts, signal_time_tx.shape[-1])
