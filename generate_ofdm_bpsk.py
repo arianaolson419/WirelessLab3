@@ -34,6 +34,10 @@ data_time_tx = ofdm.create_signal_time_domain(ofdm.NUM_SAMPLES_PER_PACKET, ofdm.
 # Concatenate the LTS, channel estimation signal, and the data together and transmit.
 signal_time_tx = np.concatenate((lts, known_signal_time_tx, data_time_tx))
 
+# Normalize to +/- 0.5.
+rms = np.sqrt(np.mean(np.square(signal_time_tx)))
+signal_time_tx = signal_time_tx * 0.5 / rms
+
 # Interleave real and imaginary samples to transmit with USRP.
 tmp = np.zeros(2 * signal_time_tx.shape[-1], dtype=np.float32)
 tmp[::2] = signal_time_tx.real
