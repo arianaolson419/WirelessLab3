@@ -6,6 +6,7 @@ from utils import nonflat_channel_timing_error
 import matplotlib.pyplot as plt
 import numpy as np
 
+# TODO: save header, lts, data as numpy arrays to use in receive code.
 # Create the long training sequence (LTS). This is a random sequence of 64
 # complex time domain samples.
 seed_real = 5
@@ -30,18 +31,24 @@ known_signal_time_tx = ofdm.create_signal_time_domain(
 seed = 10
 data_freq_tx = ofdm.create_signal_freq_domain(ofdm.NUM_SAMPLES_PER_PACKET, ofdm.NUM_PACKETS, seed)
 data_time_tx = ofdm.create_signal_time_domain(ofdm.NUM_SAMPLES_PER_PACKET, ofdm.NUM_SAMPLES_CYCLIC_PREFIX, data_freq_tx)
+rms = np.sqrt(np.mean(np.square(np.abs(data_time_tx))))
+
+# Zero padding
+zero_pad = np.zeros(5000)
 
 # Concatenate the LTS, channel estimation signal, and the data together and transmit.
-signal_time_tx = np.concatenate((lts, known_signal_time_tx, data_time_tx))
+signal_time_tx = np.concatenate((zero_pad, lts * rms, known_signal_time_tx, data_time_tx))
 
 # Normalize to +/- 0.5.
-rms = np.sqrt(np.mean(np.square(signal_time_tx)))
-signal_time_tx = signal_time_tx * 0.5 / rms
+signal_time_tx = 0.5 * signal_time_tx / np.max(np.abs(signal_time_tx))
 
 # Interleave real and imaginary samples to transmit with USRP.
 tmp = np.zeros(2 * signal_time_tx.shape[-1], dtype=np.float32)
 tmp[::2] = signal_time_tx.real
 tmp[1::2] = signal_time_tx.imag
+
+plt.plot(tmp)
+plt.show()
 
 # Save to a binary file.
 tmp.tofile('tx_bpsk.dat')
