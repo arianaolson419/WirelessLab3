@@ -6,41 +6,42 @@ from utils import nonflat_channel_timing_error
 import matplotlib.pyplot as plt
 import numpy as np
 
-# TODO: read in received data from file.
 received_data = np.fromfile("Data/ofdmReceiveFile_70.dat", dtype=np.float32)
-# TODO: make interleaved signal into a complex signal
 signal_time_rx = received_data[::2] + received_data[1::2]*1j
 
-# TODO: load in saved lts, header, data. 
 tx_arrays = np.load('tx_arrays.npz')
 lts = tx_arrays['lts']
-header_time = tx_arrays['header']
-data_time = tx_arrays['data']
-
+header_time = tx_arrays['header_time']
+data_time = tx_arrays['data_time']
+header_freq = tx_arrays['header_freq']
+data_freq = tx_arrays['data_freq']
 
 # Find the start of the data using the LTS.
-signal_time_rx = ofdm.detect_start_lts(signal_time_rx, lts, signal_time_tx.shape[-1])
+signal_time_len = lts.shape[-1] + header_time.shape[-1] + data_time.shape[-1]
+signal_time_rx = ofdm.detect_start_lts(signal_time_rx, lts, signal_time_len)
 
 # Estmate f_delta using the LTS.
 lts_rx = signal_time_rx[:lts.shape[-1]]
 f_delta_est = ofdm.estimate_f_delta(lts_rx, ofdm.NUM_SAMPLES_PER_PACKET)
-print(f_delta_est, 'my f_delta')
+print(f_delta_est, 'estimated f_delta')
 
 # Correct for f_delta.
 signal_time_rx = ofdm.correct_freq_offset(signal_time_rx, f_delta_est)
 
 # Estimate the channel using the known channel estimation sequence.
 channel_est_start = lts.shape[-1]
-channel_est_end = channel_est_start + known_signal_time_tx.shape[-1]
+channel_est_end = channel_est_start + header_time.shape[-1]
 
-known_signal_time_rx = signal_time_rx[channel_est_start:channel_est_end]
-known_signal_freq_rx = ofdm.convert_time_to_frequency(ofdm.NUM_SAMPLES_PER_PACKET, ofdm.NUM_SAMPLES_CYCLIC_PREFIX, known_signal_time_rx)
+header_time_rx = signal_time_rx[channel_est_start:channel_est_end]
+header_freq_rx = ofdm.convert_time_to_frequency(ofdm.NUM_SAMPLES_PER_PACKET, ofdm.NUM_SAMPLES_CYCLIC_PREFIX, header_time_rx)
 
-H = ofdm.estimate_channel(known_signal_freq_tx, known_signal_freq_rx)
-known_signal_eq = ofdm.equalize_frequency(H, known_signal_freq_rx)
+print(header_freq.shape, header_freq_rx.shape)
+
+H = ofdm.estimate_channel(header_freq, header_freq_rx)
+header_eq = ofdm.equalize_frequency(H, header_freq_rx)
 
 # See what the bit-error rate is for the decoded known header.
-print((ofdm.decode_signal_freq(known_signal_eq) == known_signal_freq_tx).mean())
+print((ofdm.decode_signal_freq(header_eq) == header_freq).mean())
 
 # Convert from time to frequency domain.
 data_time_rx = signal_time_rx[channel_est_end:]
@@ -53,6 +54,6 @@ data_freq_eq = ofdm.equalize_frequency(H, data_freq_rx)
 bits = ofdm.decode_signal_freq(data_freq_eq)
 
 # Calculate the percent error rate.
-percent_error = ofdm.calculate_error(np.sign(data_freq_tx), bits)
+percent_error = ofdm.calculate_error(np.sign(data_freq), bits)
 
 print("The bit error rate is: {}%".format(percent_error))
