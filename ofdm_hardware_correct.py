@@ -7,8 +7,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # TODO: read in received data from file.
+received_data = np.fromfile("Data/ofdmReceiveFile_70.dat", dtype=np.float32)
 # TODO: make interleaved signal into a complex signal
+signal_time_rx = received_data[::2] + received_data[1::2]*1j
+
 # TODO: load in saved lts, header, data. 
+
 
 # Find the start of the data using the LTS.
 signal_time_rx = ofdm.detect_start_lts(signal_time_rx, lts, signal_time_tx.shape[-1])
