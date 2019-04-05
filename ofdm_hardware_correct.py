@@ -9,6 +9,9 @@ import numpy as np
 received_data = np.fromfile("Data/ofdmReceiveFile_70.dat", dtype=np.float32)
 signal_time_rx = received_data[::2] + received_data[1::2]*1j
 
+
+
+
 tx_arrays = np.load('tx_arrays.npz')
 lts = tx_arrays['lts']
 header_time = tx_arrays['header_time']
@@ -16,9 +19,22 @@ data_time = tx_arrays['data_time']
 header_freq = tx_arrays['header_freq']
 data_freq = tx_arrays['data_freq']
 
+tmp = signal_time_rx
+
+plt.plot(signal_time_rx)
+
 # Find the start of the data using the LTS.
 signal_time_len = lts.shape[-1] + header_time.shape[-1] + data_time.shape[-1]
-signal_time_rx = ofdm.detect_start_lts(signal_time_rx, lts, signal_time_len)
+lag, signal_time_rx = ofdm.detect_start_lts(signal_time_rx, lts, signal_time_len)
+tmp[:lag] = 0
+tmp[lag + signal_time_len:] = 0
+
+
+plt.plot(tmp)
+plt.title("received data")
+plt.show()
+
+
 
 # Estmate f_delta using the LTS.
 lts_rx = signal_time_rx[:lts.shape[-1]]
