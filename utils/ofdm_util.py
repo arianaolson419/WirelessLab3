@@ -124,6 +124,10 @@ def estimate_channel(tx_known_signal_frequency, rx_known_signal_frequncy):
     H = H.reshape(rx_known_signal_frequncy.shape[-1] // NUM_SAMPLES_PER_PACKET, NUM_SAMPLES_PER_PACKET)
 
     H = np.mean(H, axis=0)
+
+    plt.plot(H)
+    plt.title("Coefficient Values")
+    plt.show()
     return(H)
 
 def estimate_phase(packet_frequency):
@@ -197,8 +201,10 @@ def equalize_frequency(channel_estimation, signal_freq, est_phase=False):
             phase_estimates.append(phase_est)
             signal_freq[i:i+NUM_SAMPLES_PER_PACKET] /= phase_est
     
-    plt.plot(phase_estimates)
-    plt.show()
+    if est_phase:
+        plt.plot(phase_estimates)
+        plt.title("phase estimates")
+        plt.show()
     return signal_freq
 
 def decode_signal_freq(signal_freq):
