@@ -9,9 +9,6 @@ import numpy as np
 received_data = np.fromfile("Data/ofdmReceiveFile_70.dat", dtype=np.float32)
 signal_time_rx = received_data[::2] + received_data[1::2]*1j
 
-
-
-
 tx_arrays = np.load('tx_arrays.npz')
 lts = tx_arrays['lts']
 header_time = tx_arrays['header_time']
@@ -29,12 +26,9 @@ lag, signal_time_rx = ofdm.detect_start_lts(signal_time_rx, lts, signal_time_len
 tmp[:lag] = 0
 tmp[lag + signal_time_len:] = 0
 
-
 plt.plot(tmp)
 plt.title("received data")
 plt.show()
-
-
 
 # Estmate f_delta using the LTS.
 lts_rx = signal_time_rx[:lts.shape[-1]]
@@ -63,7 +57,7 @@ print((ofdm.decode_signal_freq(header_eq) == header_freq).mean())
 data_time_rx = signal_time_rx[channel_est_end:]
 data_freq_rx = ofdm.convert_time_to_frequency(ofdm.NUM_SAMPLES_PER_PACKET, ofdm.NUM_SAMPLES_CYCLIC_PREFIX, data_time_rx)
 
-# Equalize the signal
+# Correct for the channel and the phase offset.
 data_freq_eq = ofdm.equalize_frequency(H, data_freq_rx)
 
 # Decode the signal in the frequency domain.
