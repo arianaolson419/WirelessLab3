@@ -106,7 +106,7 @@ def detect_start_lts(signal_time_rx, lts, signal_length):
     cross_corr = np.correlate(signal_time_rx, lts)
     lag = np.argmax(np.abs(cross_corr)) - 1
 
-    return signal_time_rx[lag:lag+signal_length]
+    return lag, signal_time_rx[lag:lag+signal_length]
 
 def estimate_channel(tx_known_signal_frequency, rx_known_signal_frequncy):
     """Estimate the frequency domain channel coefficient from a set of transmitted and received known signals.
@@ -186,11 +186,19 @@ def equalize_frequency(channel_estimation, signal_freq, est_phase=False):
         signal_freq_eq: An equalized frequency domain signal.
     """
     assert signal_freq.shape[-1] % channel_estimation.shape[-1] == 0
+    phase_estimates = []
+
+
+
     for i in range(0, signal_freq.shape[-1], NUM_SAMPLES_PER_PACKET):
         signal_freq[i:i+NUM_SAMPLES_PER_PACKET] = signal_freq[i:i+NUM_SAMPLES_PER_PACKET] / channel_estimation
         if est_phase:
             phase_est = estimate_phase(signal_freq[i:i+NUM_SAMPLES_PER_PACKET])
+            phase_estimates.append(phase_est)
             signal_freq[i:i+NUM_SAMPLES_PER_PACKET] /= phase_est
+    
+    plt.plot(phase_estimates)
+    plt.show()
     return signal_freq
 
 def decode_signal_freq(signal_freq):
