@@ -38,7 +38,7 @@ header_freq_rx = ofdm.convert_time_to_frequency(ofdm.NUM_SAMPLES_PER_PACKET, ofd
 print(header_freq.shape, header_freq_rx.shape)
 
 H = ofdm.estimate_channel(header_freq, header_freq_rx)
-header_eq = ofdm.equalize_frequency(H, header_freq_rx)
+header_eq = ofdm.equalize_frequency(H, header_freq_rx, est_phase=True)
 
 # See what the bit-error rate is for the decoded known header.
 print((ofdm.decode_signal_freq(header_eq) == header_freq).mean())

@@ -12,7 +12,7 @@ NUM_PACKETS = 1000
 NUM_HEADER_PACKETS = 10
 NUM_SAMPLES_CYCLIC_PREFIX = 16
 
-def create_signal_freq_domain(num_samples, num_packets, seed):
+def create_signal_freq_domain(num_samples, num_packets, seed, parity=False):
     """Create a bit sequence in the frequency domain.
 
     Args:
@@ -26,6 +26,19 @@ def create_signal_freq_domain(num_samples, num_packets, seed):
     """
     np.random.seed(seed)
     signal_freq = np.sign(np.random.randn(num_samples * num_packets))
+
+    if parity:
+        parity7 = 1
+        parity21 = 1
+        parity44 = 1
+        parity58 = 1
+
+        for i in range(0, num_packets, num_samples):
+            signal_freq[i + 7] = parity7
+            signal_freq[i + 21] = parity21
+            signal_freq[i + 44] = parity44
+            signal_freq[i + 58] = parity58
+
     return signal_freq
 
 def create_signal_time_domain(num_samples_data, num_samples_prefix, signal_freq):
@@ -113,6 +126,22 @@ def estimate_channel(tx_known_signal_frequency, rx_known_signal_frequncy):
     H = np.mean(H, axis=0)
     return(H)
 
+def estimate_phase(packet_frequency):
+    """Estimate the average phase off set of a packet of ofdm data using pilot bits.
+
+    Args: 
+        packet_frequency (ndarray): An array representing a single packet of data in the frequency domain.
+
+    Returns:
+        phase (complex float): The estimated average phase offset.
+    """
+    phase7 = np.angle(packet_frequency[7])
+    phase21 = np.angle(packet_frequency[21])
+    phase44 = np.angle(packet_frequency[44])
+    phase58 = np.angle(packet_frequency[58])
+
+    return (phase7 + phase21 + phase44 + phase58) / 4
+
 def convert_time_to_frequency(num_samples_data, num_samples_prefix, signal_time):
     """Convert a received OFDM signal from the time domain to the frequency.
 
@@ -145,7 +174,7 @@ def convert_time_to_frequency(num_samples_data, num_samples_prefix, signal_time)
 
     return signal_freq
 
-def equalize_frequency(channel_estimation, signal_freq):
+def equalize_frequency(channel_estimation, signal_freq, est_phase=False):
     """Correct a frequency domain signal for the effects of a flat fading channel.
 
     Args:
@@ -159,6 +188,9 @@ def equalize_frequency(channel_estimation, signal_freq):
     assert signal_freq.shape[-1] % channel_estimation.shape[-1] == 0
     for i in range(0, signal_freq.shape[-1], NUM_SAMPLES_PER_PACKET):
         signal_freq[i:i+NUM_SAMPLES_PER_PACKET] = signal_freq[i:i+NUM_SAMPLES_PER_PACKET] / channel_estimation
+        if est_phase:
+            phase_est = estimate_phase(signal_freq[i:i+NUM_SAMPLES_PER_PACKET])
+            signal_freq[i:i+NUM_SAMPLES_PER_PACKET] /= phase_est
     return signal_freq
 
 def decode_signal_freq(signal_freq):
