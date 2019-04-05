@@ -33,7 +33,7 @@ def create_signal_freq_domain(num_samples, num_packets, seed, parity=False):
         parity44 = 1
         parity58 = 1
 
-        for i in range(0, num_packets, num_samples):
+        for i in range(0, signal_freq.shape[-1], num_samples):
             signal_freq[i + 7] = parity7
             signal_freq[i + 21] = parity21
             signal_freq[i + 44] = parity44

@@ -15,12 +15,13 @@ lts = ofdm.create_long_training_sequence(ofdm.NUM_SAMPLES_PER_PACKET, seed_real,
 
 # Create the channel estimation sequence.
 seed = 11
-num_known_packets = 100
+num_known_packets = 10
 
 known_signal_freq_tx = ofdm.create_signal_freq_domain(
         ofdm.NUM_SAMPLES_PER_PACKET,
         num_known_packets,
-        seed)
+        seed,
+        parity=True)
 
 known_signal_time_tx = ofdm.create_signal_time_domain(
         ofdm.NUM_SAMPLES_PER_PACKET,
