@@ -12,7 +12,7 @@ NUM_PACKETS = 1000
 NUM_HEADER_PACKETS = 10
 NUM_SAMPLES_CYCLIC_PREFIX = 16
 
-def create_signal_freq_domain(num_samples, num_packets, seed, parity=False):
+def create_signal_freq_domain(num_samples, num_packets, seed, pilot=False):
     """Create a bit sequence in the frequency domain.
 
     Args:
@@ -27,17 +27,17 @@ def create_signal_freq_domain(num_samples, num_packets, seed, parity=False):
     np.random.seed(seed)
     signal_freq = np.sign(np.random.randn(num_samples * num_packets))
 
-    if parity:
-        parity7 = 1
-        parity21 = 1
-        parity44 = 1
-        parity58 = 1
+    if pilot:
+        pilot7 = 1
+        pilot21 = 1
+        pilot44 = 1
+        pilot58 = 1
 
         for i in range(0, signal_freq.shape[-1], num_samples):
-            signal_freq[i + 7] = parity7
-            signal_freq[i + 21] = parity21
-            signal_freq[i + 44] = parity44
-            signal_freq[i + 58] = parity58
+            signal_freq[i + 7] = pilot7
+            signal_freq[i + 21] = pilot21
+            signal_freq[i + 44] = pilot44
+            signal_freq[i + 58] = pilot58
 
     return signal_freq
 
