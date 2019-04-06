@@ -234,8 +234,14 @@ def calculate_error(bits_tx, bits_est):
     """
     assert bits_tx.shape == bits_est.shape
 
-    num_wrong = np.sum(bits_tx != bits_est)
-    percent_error = 100 * num_wrong / bits_tx.shape[-1]
+    for cycle_i in range(NUM_PACKETS):
+        bits_tx_block1 = bits_tx[1:27]
+        bits_est_block1 = bits_est[1:27]
+        bits_tx_block2 = bits_tx[38:]
+        bits_est_block2 = bits_est[38:]
+        num_wrong = np.sum(bits_tx_block1 != bits_est_block1) + np.sum(bits_tx_block1 != bits_est_block1)
+    # num_wrong = np.sum(bits_tx != bits_est)
+    percent_error = 100 * num_wrong / (26 + 27)# bits_tx.shape[-1]
 
     return percent_error
 
