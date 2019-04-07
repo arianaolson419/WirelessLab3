@@ -45,8 +45,6 @@ channel_est_end = channel_est_start + header_time.shape[-1]
 header_time_rx = signal_time_rx[channel_est_start:channel_est_end]
 header_freq_rx = ofdm.convert_time_to_frequency(ofdm.NUM_SAMPLES_PER_PACKET, ofdm.NUM_SAMPLES_CYCLIC_PREFIX, header_time_rx)
 
-print(header_freq.shape, header_freq_rx.shape)
-
 H = ofdm.estimate_channel(header_freq, header_freq_rx)
 header_eq = ofdm.equalize_frequency(H, header_freq_rx, est_phase=True)
 
