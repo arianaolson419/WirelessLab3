@@ -62,6 +62,9 @@ data_freq_eq = ofdm.equalize_frequency(H, data_freq_rx)
 bits = ofdm.decode_signal_freq(data_freq_eq)
 
 # Calculate the percent error rate.
-percent_error = ofdm.calculate_error(np.sign(data_freq), bits)
+print(data_freq.shape)
+percent_error = ofdm.calculate_error(np.sign(data_freq)[:9000], bits[:9000])
+plt.(np.sign(data_freq), bits, 'o')
+plt.show()
 
 print("The bit error rate is: {}%".format(percent_error))
