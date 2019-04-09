@@ -21,7 +21,7 @@ known_signal_freq_tx = ofdm.create_signal_freq_domain(
         ofdm.NUM_SAMPLES_PER_PACKET,
         num_known_packets,
         seed,
-        parity=True)
+        pilot=True)
 
 known_signal_time_tx = ofdm.create_signal_time_domain(
         ofdm.NUM_SAMPLES_PER_PACKET,
