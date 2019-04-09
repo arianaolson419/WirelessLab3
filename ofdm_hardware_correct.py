@@ -84,6 +84,7 @@ plt.show()
 
 
 
+#data_freq_eq = ofdm.equalize_frequency(H, data_freq_rx, est_phase=True)
 
 # Decode the signal in the frequency domain.
 bits = ofdm.decode_signal_freq(data_freq_eq)
