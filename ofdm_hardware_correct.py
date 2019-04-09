@@ -56,15 +56,15 @@ data_time_rx = signal_time_rx[channel_est_end:]
 data_freq_rx = ofdm.convert_time_to_frequency(ofdm.NUM_SAMPLES_PER_PACKET, ofdm.NUM_SAMPLES_CYCLIC_PREFIX, data_time_rx)
 
 # Correct for the channel and the phase offset.
-data_freq_eq = ofdm.equalize_frequency(H, data_freq_rx)
+data_freq_eq = ofdm.equalize_frequency(H, data_freq_rx, est_phase=False)
+#data_freq_eq = ofdm.equalize_frequency(H, data_freq_rx, est_phase=True)
 
 # Decode the signal in the frequency domain.
 bits = ofdm.decode_signal_freq(data_freq_eq)
 
 # Calculate the percent error rate.
 print(data_freq.shape)
-percent_error = ofdm.calculate_error(np.sign(data_freq)[:9000], bits[:9000])
-plt.(np.sign(data_freq), bits, 'o')
+percent_error = ofdm.calculate_error(np.sign(data_freq)[:4000], bits[:4000])
 plt.show()
 
 print("The bit error rate is: {}%".format(percent_error))
