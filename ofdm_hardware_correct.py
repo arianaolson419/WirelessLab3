@@ -23,7 +23,7 @@ data_freq = tx_arrays['data_freq']
 
 tmp = signal_time_rx
 
-# plt.plot(signal_time_rx)
+plt.plot(signal_time_rx)
 
 # Find the start of the data using the LTS.
 signal_time_len = lts.shape[-1] + header_time.shape[-1] + data_time.shape[-1]
@@ -31,9 +31,9 @@ lag, signal_time_rx = ofdm.detect_start_lts(signal_time_rx, lts, signal_time_len
 tmp[:lag] = 0
 tmp[lag + signal_time_len:] = 0
 
-# plt.plot(tmp)
-# plt.title("received data")
-# plt.show()
+plt.plot(tmp)
+plt.title("received data")
+plt.show()
 
 # Estmate f_delta using the LTS.
 lts_rx = signal_time_rx[:lts.shape[-1]]
@@ -77,6 +77,12 @@ plt.show()
 # Correct for the channel and the phase offset.
 data_freq_eq = ofdm.equalize_frequency(H, data_freq_rx, est_phase=False)
 
+tmp = data_freq_eq[12::ofdm.NUM_SAMPLES_PER_PACKET]
+
+plt.plot(tmp.real, tmp.imag, ".")
+plt.title("Constellation plot of subcarrier 12")
+plt.show()
+
 plt.plot(data_freq_eq)
 plt.title("Received Data (Frequency) after equalization, before quantization")
 plt.show()
@@ -91,7 +97,7 @@ bits = ofdm.decode_signal_freq(data_freq_eq)
 
 # Calculate the percent error rate.
 print(data_freq.shape)
-percent_error = ofdm.calculate_error(np.sign(data_freq)[:4000], bits[:4000])
+percent_error = ofdm.calculate_error(ofdm.decode_signal_freq(data_freq)[:4000], bits[:4000])
 plt.plot(np.sign(data_freq) == bits, 'o')
 plt.show()
 

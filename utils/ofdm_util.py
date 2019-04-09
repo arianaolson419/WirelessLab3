@@ -143,10 +143,10 @@ def estimate_phase(packet_frequency):
     Returns:
         phase (complex float): The estimated average phase offset.
     """
-    phase7 = np.angle(packet_frequency[7])
-    phase21 = np.angle(packet_frequency[21])
-    phase44 = np.angle(packet_frequency[44])
-    phase58 = np.angle(packet_frequency[58])
+    phase7 = np.angle(packet_frequency[7]/ (1 + 1j))
+    phase21 = np.angle(packet_frequency[21]/ (1 + 1j))
+    phase44 = np.angle(packet_frequency[44]/ (1 + 1j))
+    phase58 = np.angle(packet_frequency[58]/ (1 + 1j))
 
     return (phase7 + phase21 + phase44 + phase58) / 4
 
@@ -221,7 +221,8 @@ def decode_signal_freq(signal_freq):
     Returns:
         bits (1D ndarray): The bit sequence decoded from signal_freq.
     """
-    bits = np.sign(signal_freq)
+    bits = np.sign(signal_freq.real) + 1j * np.sign(signal_freq.imag)
+
     return bits
 
 def calculate_error(bits_tx, bits_est):
