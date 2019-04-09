@@ -199,7 +199,7 @@ def equalize_frequency(channel_estimation, signal_freq, est_phase=False):
         if est_phase:
             phase_est = estimate_phase(signal_freq[i:i+NUM_SAMPLES_PER_PACKET])
             phase_estimates.append(phase_est)
-            signal_freq[i:i+NUM_SAMPLES_PER_PACKET] /= phase_est
+            signal_freq[i:i+NUM_SAMPLES_PER_PACKET] /= np.exp(1j*phase_est)
     
     if est_phase:
         plt.plot(phase_estimates)

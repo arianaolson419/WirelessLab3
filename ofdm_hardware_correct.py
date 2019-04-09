@@ -9,6 +9,11 @@ import numpy as np
 received_data = np.fromfile("Data/ofdmReceiveFile_70.dat", dtype=np.float32)
 signal_time_rx = received_data[::2] + received_data[1::2]*1j
 
+# plt.plot(signal_time_rx)
+# plt.title("Received Signal Without Correction")
+# plt.show()
+
+
 tx_arrays = np.load('tx_arrays.npz')
 lts = tx_arrays['lts']
 header_time = tx_arrays['header_time']
@@ -18,7 +23,7 @@ data_freq = tx_arrays['data_freq']
 
 tmp = signal_time_rx
 
-plt.plot(signal_time_rx)
+# plt.plot(signal_time_rx)
 
 # Find the start of the data using the LTS.
 signal_time_len = lts.shape[-1] + header_time.shape[-1] + data_time.shape[-1]
@@ -26,9 +31,9 @@ lag, signal_time_rx = ofdm.detect_start_lts(signal_time_rx, lts, signal_time_len
 tmp[:lag] = 0
 tmp[lag + signal_time_len:] = 0
 
-plt.plot(tmp)
-plt.title("received data")
-plt.show()
+# plt.plot(tmp)
+# plt.title("received data")
+# plt.show()
 
 # Estmate f_delta using the LTS.
 lts_rx = signal_time_rx[:lts.shape[-1]]
@@ -55,16 +60,38 @@ print((ofdm.decode_signal_freq(header_eq) == header_freq).mean())
 data_time_rx = signal_time_rx[channel_est_end:]
 data_freq_rx = ofdm.convert_time_to_frequency(ofdm.NUM_SAMPLES_PER_PACKET, ofdm.NUM_SAMPLES_CYCLIC_PREFIX, data_time_rx)
 
+
+
+# Plot the time domain signal after finding the start.
+plt.subplot(2, 1, 1)
+plt.plot(data_time_rx[:ofdm.NUM_SAMPLES_PER_PACKET + ofdm.NUM_SAMPLES_CYCLIC_PREFIX])
+plt.title("Time Domain with Cyclic Prefixes After Finding Start (first packet of {} samples with {} cyclic prefix samples".format(ofdm.NUM_SAMPLES_PER_PACKET, ofdm.NUM_SAMPLES_CYCLIC_PREFIX))
+plt.plot()
+# Plot the frequency domain signal.
+plt.subplot(2, 1, 2)
+plt.stem(data_freq_rx[:ofdm.NUM_SAMPLES_PER_PACKET])
+plt.title("Frequency Domain (first packet of {} samples)".format(ofdm.NUM_SAMPLES_PER_PACKET))
+plt.show()
+
+
 # Correct for the channel and the phase offset.
-data_freq_eq = ofdm.equalize_frequency(H, data_freq_rx)
+data_freq_eq = ofdm.equalize_frequency(H, data_freq_rx, est_phase=False)
+
+plt.plot(data_freq_eq)
+plt.title("Received Data (Frequency) after equalization, before quantization")
+plt.show()
+
+
+
+
 
 # Decode the signal in the frequency domain.
 bits = ofdm.decode_signal_freq(data_freq_eq)
 
 # Calculate the percent error rate.
 print(data_freq.shape)
-percent_error = ofdm.calculate_error(np.sign(data_freq)[:9000], bits[:9000])
-plt.(np.sign(data_freq), bits, 'o')
+percent_error = ofdm.calculate_error(np.sign(data_freq)[:4000], bits[:4000])
+plt.plot(np.sign(data_freq) == bits, 'o')
 plt.show()
 
 print("The bit error rate is: {}%".format(percent_error))
