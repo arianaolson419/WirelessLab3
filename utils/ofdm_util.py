@@ -25,13 +25,17 @@ def create_signal_freq_domain(num_samples, num_packets, seed, pilot=False):
             domain. This will be of length num_packets * num_samples.
     """
     np.random.seed(seed)
-    signal_freq = np.sign(np.random.randn(num_samples * num_packets))
+    signal_freq_real = np.sign(np.random.randn(num_samples * num_packets))
+    np.random.seed(seed * 2)
+    signal_freq_imag = np.sign(np.random.randn(num_samples * num_packets))
+
+    signal_freq = signal_freq_real + 1j * signal_freq_imag
 
     if pilot:
-        pilot7 = 1
-        pilot21 = 1
-        pilot44 = 1
-        pilot58 = 1
+        pilot7 = 1 + 1j
+        pilot21 = 1 + 1j
+        pilot44 = 1 + 1j
+        pilot58 = 1 + 1j
 
         for i in range(0, signal_freq.shape[-1], num_samples):
             signal_freq[i + 7] = pilot7
