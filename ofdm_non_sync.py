@@ -1,6 +1,9 @@
 """This script contains code to implement OFDM for a simulated signal that is
-not timimg synchronizezd. Ti=he Schmidl-Cox algortithm is used to perform
+not timimg synchronizezd. The Schmidl-Cox algortithm is used to perform
 timing synchronization.
+
+Usage:
+    python3 ofdm_non_sync.py
 """
 from __future__ import print_function, division
 

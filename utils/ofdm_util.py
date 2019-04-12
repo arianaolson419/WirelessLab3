@@ -12,7 +12,7 @@ NUM_PACKETS = 1000
 NUM_HEADER_PACKETS = 10
 NUM_SAMPLES_CYCLIC_PREFIX = 16
 
-def create_signal_freq_domain(num_samples, num_packets, seed, pilot=False):
+def create_signal_freq_domain(num_samples, num_packets, seed, pilot=False, qpsk=False):
     """Create a bit sequence in the frequency domain.
 
     Args:
@@ -26,16 +26,26 @@ def create_signal_freq_domain(num_samples, num_packets, seed, pilot=False):
     """
     np.random.seed(seed)
     signal_freq_real = np.sign(np.random.randn(num_samples * num_packets))
-    np.random.seed(seed * 2)
-    signal_freq_imag = np.sign(np.random.randn(num_samples * num_packets))
+
+    if qpsk:
+        np.random.seed(seed * 2)
+        signal_freq_imag = np.sign(np.random.randn(num_samples * num_packets))
+    else:
+        signal_freq_imag = np.zeros(signal_freq_real.shape)
 
     signal_freq = signal_freq_real + 1j * signal_freq_imag
 
     if pilot:
-        pilot7 = 1 + 1j
-        pilot21 = 1 + 1j
-        pilot44 = 1 + 1j
-        pilot58 = 1 + 1j
+        if qpsk:
+            pilot7 = 1 + 1j
+            pilot21 = 1 + 1j
+            pilot44 = 1 + 1j
+            pilot58 = 1 + 1j
+        else:
+            pilot7 = 1
+            pilot21 = 1
+            pilot44 = 1
+            pilot58 = 1
 
         for i in range(0, signal_freq.shape[-1], num_samples):
             signal_freq[i + 7] = pilot7
@@ -112,12 +122,13 @@ def detect_start_lts(signal_time_rx, lts, signal_length):
 
     return lag, signal_time_rx[lag:lag+signal_length]
 
-def estimate_channel(tx_known_signal_frequency, rx_known_signal_frequncy):
+def estimate_channel(tx_known_signal_frequency, rx_known_signal_frequncy, make_plots=False):
     """Estimate the frequency domain channel coefficient from a set of transmitted and received known signals.
 
     Args:
         tx_known_signals_frequency (1D ndarray): Frequency domain known signal transmitted through the channel.
         rx_known_signals_frequency (1D ndarray): Frequency domain received signal corresponding to tx_known_signal_frequency.
+        make_plots (bool): Make and show a visualization of the coefficeient values. Defaults to False.
 
     Returns:
         H (complex float): the estimated channel in the frequency domain.
@@ -129,24 +140,34 @@ def estimate_channel(tx_known_signal_frequency, rx_known_signal_frequncy):
 
     H = np.mean(H, axis=0)
 
-    plt.plot(H)
-    plt.title("Coefficient Values")
-    plt.show()
+    if make_plots:
+        plt.plot(H)
+        plt.title("Coefficient Values")
+        plt.show()
     return(H)
 
-def estimate_phase(packet_frequency):
+def estimate_phase(packet_frequency, qpsk=False):
     """Estimate the average phase off set of a packet of ofdm data using pilot bits.
 
     Args: 
         packet_frequency (ndarray): An array representing a single packet of data in the frequency domain.
+        qpsk (bool): Specifies that the signal is a QPSK signal instead of a
+            BPSK signal. Defaults to False.
 
     Returns:
         phase (complex float): The estimated average phase offset.
     """
-    phase7 = np.angle(packet_frequency[7]/ (1 + 1j))
-    phase21 = np.angle(packet_frequency[21]/ (1 + 1j))
-    phase44 = np.angle(packet_frequency[44]/ (1 + 1j))
-    phase58 = np.angle(packet_frequency[58]/ (1 + 1j))
+    if qpsk:
+        phase7 = np.angle(packet_frequency[7]/ (1 + 1j))
+        phase21 = np.angle(packet_frequency[21]/ (1 + 1j))
+        phase44 = np.angle(packet_frequency[44]/ (1 + 1j))
+        phase58 = np.angle(packet_frequency[58]/ (1 + 1j))
+
+    else:
+        phase7 = np.angle(packet_frequency[7]/ (1))
+        phase21 = np.angle(packet_frequency[21]/ (1))
+        phase44 = np.angle(packet_frequency[44]/ (1))
+        phase58 = np.angle(packet_frequency[58]/ (1))
 
     return (phase7 + phase21 + phase44 + phase58) / 4
 
@@ -182,30 +203,35 @@ def convert_time_to_frequency(num_samples_data, num_samples_prefix, signal_time)
 
     return signal_freq
 
-def equalize_frequency(channel_estimation, signal_freq, est_phase=False):
+def equalize_frequency(channel_estimation, signal_freq, est_phase=False, qpsk=False, make_plots=False):
     """Correct a frequency domain signal for the effects of a flat fading channel.
 
     Args:
         channel_estimation (complex float): The flat-fading channel estimation
             in the frequency domain.
-        signal_freq: A frequency domain signal containing packets of data.
+        signal_freq (1D complex ndarray): A frequency domain signal containing
+            packets of data.
+        est_phase (bool): Estimate the phase offset from pilot bits. Defaults to False.
+        qpsk (bool): Specifies that the signal is a QPSK signal instead of a
+            BPSK signal. Defaults to False.
+        make_plots (bool): Make and display a visualization of the phase
+            estimates. Defaults to False. This only works if est_phase is also
+            true.
 
     Returns:
-        signal_freq_eq: An equalized frequency domain signal.
+        signal_freq_eq (1D complex ndarray): An equalized frequency domain signal.
     """
     assert signal_freq.shape[-1] % channel_estimation.shape[-1] == 0
     phase_estimates = []
 
-
-
     for i in range(0, signal_freq.shape[-1], NUM_SAMPLES_PER_PACKET):
         signal_freq[i:i+NUM_SAMPLES_PER_PACKET] = signal_freq[i:i+NUM_SAMPLES_PER_PACKET] / channel_estimation
         if est_phase:
-            phase_est = estimate_phase(signal_freq[i:i+NUM_SAMPLES_PER_PACKET])
+            phase_est = estimate_phase(signal_freq[i:i+NUM_SAMPLES_PER_PACKET], qpsk=False)
             phase_estimates.append(phase_est)
             signal_freq[i:i+NUM_SAMPLES_PER_PACKET] /= np.exp(1j*phase_est)
     
-    if est_phase:
+    if make_plots and est_phase:
         plt.plot(phase_estimates)
         plt.title("phase estimates")
         plt.show()

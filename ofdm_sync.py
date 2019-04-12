@@ -3,6 +3,9 @@ from utils import ofdm_util as ofdm
 in Lab 3 part a. The signals in this script are timing synchronized.
 
 Author: Ariana Olson
+
+Usage:
+    python3 ofdm_sync.py
 """
 from __future__ import print_function, division
 
