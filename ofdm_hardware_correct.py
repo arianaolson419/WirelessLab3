@@ -45,6 +45,8 @@ parser.add_argument('--tx_npz_path', type=str, default='tx_arrays.npz',
         + 'signal.')
 parser.add_argument('--make_plots', type=bool, default=False,
         help='Generate and display plots.')
+parser.add_argument('--qpsk', type=bool, default=False,
+        help='Decode a qpsk signal')
 
 FLAGS, unparsed = parser.parse_known_args()
 
@@ -97,10 +99,10 @@ header_time_rx = signal_time_rx[channel_est_start:channel_est_end]
 header_freq_rx = ofdm.convert_time_to_frequency(ofdm.NUM_SAMPLES_PER_PACKET, ofdm.NUM_SAMPLES_CYCLIC_PREFIX, header_time_rx)
 
 H = ofdm.estimate_channel(header_freq, header_freq_rx)
-header_eq = ofdm.equalize_frequency(H, header_freq_rx, est_phase=True)
+header_eq = ofdm.equalize_frequency(H, header_freq_rx, qpsk=FLAGS.qpsk, est_phase=True)
 
 # See what the bit-error rate is for the decoded known header.
-print((ofdm.decode_signal_freq(header_eq) == header_freq).mean())
+print((ofdm.decode_signal_freq(header_eq, qpsk=FLAGS.qpsk) == header_freq).mean())
 
 # Convert from time to frequency domain.
 data_time_rx = signal_time_rx[channel_est_end:]
@@ -123,7 +125,7 @@ if FLAGS.make_plots:
     plt.show()
 
 # Correct for the channel and the phase offset.
-data_freq_eq = ofdm.equalize_frequency(H, data_freq_rx, est_phase=False)
+data_freq_eq = ofdm.equalize_frequency(H, data_freq_rx, qpsk=FLAGS.qpsk, est_phase=False)
 
 if FLAGS.make_plots:
     tmp = data_freq_eq[12::ofdm.NUM_SAMPLES_PER_PACKET]
@@ -137,11 +139,11 @@ if FLAGS.make_plots:
     plt.show()
 
 # Decode the signal in the frequency domain.
-bits = ofdm.decode_signal_freq(data_freq_eq)
+bits = ofdm.decode_signal_freq(data_freq_eq, qpsk=FLAGS.qpsk)
 
 # Calculate the percent error rate.
 print(data_freq.shape)
-percent_error = ofdm.calculate_error(ofdm.decode_signal_freq(data_freq)[:4000], bits[:4000])
+percent_error = ofdm.calculate_error(ofdm.decode_signal_freq(data_freq, qpsk=FLAGS.qpsk)[:4000], bits[:4000])
 
 if FLAGS.make_plots:
     plt.plot(np.sign(data_freq) == bits, 'o')

@@ -110,6 +110,7 @@ plt.show()
 bits = ofdm.decode_signal_freq(signal_freq_eq)
 
 # Calculate the percent error rate.
-percent_error = ofdm.calculate_error(signal_freq_tx, bits)
+percent_error = ofdm.calculate_error(ofdm.decode_signal_freq(signal_freq_tx), bits)
 
+print(np.sum(ofdm.decode_signal_freq(signal_freq_tx) == bits))
 print("The bit error rate is: {}%".format(percent_error))

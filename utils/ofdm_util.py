@@ -227,7 +227,7 @@ def equalize_frequency(channel_estimation, signal_freq, est_phase=False, qpsk=Fa
     for i in range(0, signal_freq.shape[-1], NUM_SAMPLES_PER_PACKET):
         signal_freq[i:i+NUM_SAMPLES_PER_PACKET] = signal_freq[i:i+NUM_SAMPLES_PER_PACKET] / channel_estimation
         if est_phase:
-            phase_est = estimate_phase(signal_freq[i:i+NUM_SAMPLES_PER_PACKET], qpsk=False)
+            phase_est = estimate_phase(signal_freq[i:i+NUM_SAMPLES_PER_PACKET], qpsk=qpsk)
             phase_estimates.append(phase_est)
             signal_freq[i:i+NUM_SAMPLES_PER_PACKET] /= np.exp(1j*phase_est)
     
@@ -237,17 +237,21 @@ def equalize_frequency(channel_estimation, signal_freq, est_phase=False, qpsk=Fa
         plt.show()
     return signal_freq
 
-def decode_signal_freq(signal_freq):
+def decode_signal_freq(signal_freq, qpsk=False):
     """Decode a frequency domain signal into a series of bits.
 
     Args:
         signal_freq (1D float32 ndarray): The bit sequence in the frequency
             domain.
+        qpsk (bool): Decode a complex signal. Defaults to False.
 
     Returns:
         bits (1D ndarray): The bit sequence decoded from signal_freq.
     """
-    bits = np.sign(signal_freq.real) + 1j * np.sign(signal_freq.imag)
+    if qpsk:
+        bits = np.sign(signal_freq.real) + 1j * np.sign(signal_freq.imag)
+    else:
+        bits = np.sign(signal_freq)
 
     return bits
 

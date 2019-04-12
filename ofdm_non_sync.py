@@ -2,6 +2,10 @@
 not timimg synchronizezd. The Schmidl-Cox algortithm is used to perform
 timing synchronization.
 
+The performance of this script is dependent on f_delta.
+
+Author: Ariana Olson
+
 Usage:
     python3 ofdm_non_sync.py
 """
@@ -50,7 +54,7 @@ plt.plot(tmp)
 plt.show()
 
 # Find the start of the data using the LTS.
-signal_time_rx = ofdm.detect_start_lts(signal_time_rx, lts, signal_time_tx.shape[-1])
+_, signal_time_rx = ofdm.detect_start_lts(signal_time_rx, lts, signal_time_tx.shape[-1])
 
 # Estmate f_delta using the LTS.
 lts_rx = signal_time_rx[:lts.shape[-1]]
@@ -65,7 +69,8 @@ channel_est_start = lts.shape[-1]
 channel_est_end = channel_est_start + known_signal_time_tx.shape[-1]
 
 known_signal_time_rx = signal_time_rx[channel_est_start:channel_est_end]
-known_signal_freq_rx = ofdm.convert_time_to_frequency(ofdm.NUM_SAMPLES_PER_PACKET, ofdm.NUM_SAMPLES_CYCLIC_PREFIX, known_signal_time_rx)
+known_signal_freq_rx = ofdm.convert_time_to_frequency(ofdm.NUM_SAMPLES_PER_PACKET,
+        ofdm.NUM_SAMPLES_CYCLIC_PREFIX, known_signal_time_rx)
 
 H = ofdm.estimate_channel(known_signal_freq_tx, known_signal_freq_rx)
 known_signal_eq = ofdm.equalize_frequency(H, known_signal_freq_rx)
@@ -84,6 +89,6 @@ data_freq_eq = ofdm.equalize_frequency(H, data_freq_rx)
 bits = ofdm.decode_signal_freq(data_freq_eq)
 
 # Calculate the percent error rate.
-percent_error = ofdm.calculate_error(np.sign(data_freq_tx), bits)
+percent_error = ofdm.calculate_error(ofdm.decode_signal_freq(data_freq_tx), bits)
 
 print("The bit error rate is: {}%".format(percent_error))
